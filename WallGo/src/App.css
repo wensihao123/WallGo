@@ -1,0 +1,85 @@
+:root {
+  --cell-size: 160px;
+  --edge-thickness: 20px;
+  --corner-size: 20px;
+}
+
+body,
+html,
+#root {
+  margin: 0;
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+}
+
+.game-container {
+  height: 200vh;
+  width: 100vw;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  background-color: #f0f0f0;
+}
+
+.indicator {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.board {
+  position: relative;
+  width: calc(7 * var(--cell-size));
+  height: calc(7 * var(--cell-size));
+}
+
+.cell {
+  position: absolute;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background: #ffeeb1;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.cell:hover {
+  background: #ffda89;
+}
+
+.edge-h,
+.edge-v {
+  position: absolute;
+  background: #e0e0e0;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.edge-h {
+  width: var(--cell-size);
+  height: var(--edge-thickness);
+}
+
+.edge-v {
+  width: var(--edge-thickness);
+  height: var(--cell-size);
+}
+
+.edge-h:hover,
+.edge-v:hover {
+  background: #eeeded;
+}
+
+.corner {
+  position: absolute;
+  width: var(--edge-thickness);
+  height: var(--edge-thickness);
+  background: #e0e0e0;
+  pointer-events: none;
+}
