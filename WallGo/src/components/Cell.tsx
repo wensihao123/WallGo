@@ -1,6 +1,7 @@
 import React from 'react';
-import { BLUE_EDGE_COLOR, CELL_SIZE, RED_EDGE_COLOR } from '../constants';
+import { BLUE_EDGE_COLOR, RED_EDGE_COLOR } from '../constants';
 import { useGameContext } from '../context/GameContext';
+import { useResponsiveSize } from '../hooks/useResponsiveSize';
 import styles from './Cell.module.css';
 
 interface CellProps {
@@ -25,7 +26,7 @@ export const Cell: React.FC<CellProps> = ({ row, col }) => {
     currentMovePlayer,
     playerWalls
   } = useGameContext();
-  
+  const { cellSize } = useResponsiveSize();
   const regionId = completedCells[row][col];
   
   // 计算区域颜色
@@ -159,19 +160,19 @@ export const Cell: React.FC<CellProps> = ({ row, col }) => {
       className={`${styles.cell} ${getCursorClass()} ${isValidMoveTarget ? styles.validMoveTarget : ''}`}
       onClick={handleClick}
       style={{
-        top: row * CELL_SIZE,
-        left: col * CELL_SIZE,
+        top: row * cellSize,
+        left: col * cellSize,
         backgroundColor,
-        width: CELL_SIZE,
-        height: CELL_SIZE,
+        width: cellSize,
+        height: cellSize,
       }}
     >
       {pieceColor && (
         <div
           className={`${styles.piece} ${isSelected ? styles.pieceSelected : ''}`}
           style={{
-            width: CELL_SIZE * 0.7,
-            height: CELL_SIZE * 0.7,
+            width: cellSize * 0.7,
+            height: cellSize * 0.7,
             backgroundColor: pieceColor,
           }}
         />

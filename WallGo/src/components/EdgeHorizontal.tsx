@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import {
   BLUE_EDGE_COLOR,
-  CELL_SIZE,
-  EDGE_THICKNESS,
   RED_EDGE_COLOR,
 } from "../constants";
 import { useGameContext } from "../context/GameContext";
+import { useResponsiveSize } from "../hooks/useResponsiveSize";
 
 interface EdgeProps {
   row: number;
@@ -29,6 +28,7 @@ export const EdgeHorizontal: React.FC<EdgeProps> = ({
     playerWalls,
     resetKey,
   } = useGameContext();
+  const { cellSize, edgeThickness } = useResponsiveSize();
 
   // Reset player state when game resets
   useEffect(() => {
@@ -94,8 +94,11 @@ export const EdgeHorizontal: React.FC<EdgeProps> = ({
     <div
       className="edge-h"
       style={{
-        top: row * CELL_SIZE - EDGE_THICKNESS / 2,
-        left: col * CELL_SIZE,
+        position: 'absolute',
+        top: row * cellSize - edgeThickness / 2,
+        left: col * cellSize,
+        width: cellSize,
+        height: edgeThickness,
         backgroundColor:
           player === 0
             ? RED_EDGE_COLOR
@@ -107,7 +110,6 @@ export const EdgeHorizontal: React.FC<EdgeProps> = ({
           : canClick
           ? "pointer"
           : "default",
-        boxSizing: "border-box",
       }}
       onClick={handleClick}
     >
@@ -119,8 +121,8 @@ export const EdgeHorizontal: React.FC<EdgeProps> = ({
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: "10px",
-            height: "10px",
+            width: Math.max(6, edgeThickness * 0.6),
+            height: Math.max(6, edgeThickness * 0.6),
             borderRadius: "50%",
             backgroundColor: "#d1b4f7",
             opacity: 0.9,

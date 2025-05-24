@@ -1,13 +1,46 @@
 :root {
-  --cell-size: 160px;
-  --edge-thickness: 20px;
-  --corner-size: 20px;
+  /* 动态计算cell size: (视口高度 - indicator高度 - padding) / 8 */
+  --indicator-height: 60px;
+  --padding: 32px;
+  --available-height: calc(100vh - var(--indicator-height) - var(--padding));
+  --cell-size: calc(var(--available-height) / 8);
+  --edge-thickness: calc(var(--cell-size) / 8);
+  --corner-size: var(--edge-thickness);
+  
+  /* 最小值限制，防止过小 */
+  --min-cell-size: 60px;
+  --min-edge-thickness: 8px;
+}
+
+/* 响应式调整 */
+@media (max-height: 600px) {
+  :root {
+    --indicator-height: 40px;
+    --padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --indicator-height: 50px;
+    --padding: 20px;
+  }
+}
+
+/* 确保最小尺寸 */
+@media (max-height: 500px) {
+  :root {
+    --cell-size: var(--min-cell-size);
+    --edge-thickness: var(--min-edge-thickness);
+  }
 }
 
 body,
 html,
 #root {
   margin: 0;
+  padding: 0;
+  overflow: hidden; /* 防止滚动 */
 }
 
 #root {
@@ -15,6 +48,8 @@ html,
   justify-content: center;
   align-items: center;
   background-color: #f0f0f0;
+  height: 100vh;
+  width: 100vw;
 }
 
 .game-container {
@@ -24,20 +59,33 @@ html,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  gap: calc(var(--padding) / 2);
   background-color: #f0f0f0;
+  padding: calc(var(--padding) / 2);
+  box-sizing: border-box;
 }
 
 .indicator {
-  font-size: 24px;
+  height: var(--indicator-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell-size) / 6);
   font-weight: bold;
   color: #333;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .board {
   position: relative;
   width: calc(7 * var(--cell-size));
   height: calc(7 * var(--cell-size));
+  flex-shrink: 0;
+  /* 确保棋盘居中且不超出视口 */
+  max-width: calc(100vw - var(--padding));
+  max-height: calc(100vh - var(--indicator-height) - var(--padding));
 }
 
 .cell {
@@ -47,39 +95,99 @@ html,
   background: #ffeeb1;
   transition: background 0.2s;
   cursor: pointer;
-}
-
-.cell:hover {
-  background: #ffda89;
-}
-
-.edge-h,
-.edge-v {
-  position: absolute;
-  background: #e0e0e0;
-  transition: background 0.2s;
-  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .edge-h {
+  position: absolute;
   width: var(--cell-size);
   height: var(--edge-thickness);
+  background: #e6e6e6;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .edge-v {
+  position: absolute;
   width: var(--edge-thickness);
   height: var(--cell-size);
-}
-
-.edge-h:hover,
-.edge-v:hover {
-  background: #d6d6d6;
+  background: #e6e6e6;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .corner {
   position: absolute;
-  width: var(--edge-thickness);
-  height: var(--edge-thickness);
-  background: #e0e0e0;
-  pointer-events: none;
+  width: var(--corner-size);
+  height: var(--corner-size);
+  background: #333;
+  box-sizing: border-box;
+}
+
+/* 棋子样式调整 */
+.piece {
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  border: calc(var(--edge-thickness) / 4) solid rgba(0, 0, 0, 0.1);
+}
+
+.piece-selected {
+  border-color: #333;
+  box-shadow: 0 0 calc(var(--edge-thickness) / 2) rgba(0, 0, 0, 0.3);
+}
+
+/* 移动指示器 */
+.move-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(var(--cell-size) / 3);
+  height: calc(var(--cell-size) / 3);
+  border: calc(var(--edge-thickness) / 4) dashed #666;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  box-sizing: border-box;
+}
+
+/* 小屏幕优化 */
+@media (max-width: 480px) {
+  .indicator {
+    font-size: calc(var(--cell-size) / 8);
+    padding: calc(var(--padding) / 4);
+  }
+  
+  .game-container {
+    gap: calc(var(--padding) / 4);
+    padding: calc(var(--padding) / 4);
+  }
+}
+
+/* 横屏适配 */
+@media (orientation: landscape) and (max-height: 600px) {
+  .game-container {
+    flex-direction: row;
+    gap: calc(var(--padding) / 2);
+  }
+  
+  .indicator {
+    writing-mode: vertical-rl;
+    height: auto;
+    width: var(--indicator-height);
+  }
+  
+  .board {
+    width: calc(7 * var(--cell-size));
+    height: calc(7 * var(--cell-size));
+  }
+  
+  :root {
+    --available-height: calc(100vh - var(--padding));
+    --cell-size: calc(var(--available-height) / 8);
+  }
 }

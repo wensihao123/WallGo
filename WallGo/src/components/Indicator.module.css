@@ -2,12 +2,12 @@
   background: #f2f5fa;
   border: 2px solid #ddd;
   border-radius: 12px;
-  padding: 8px;
+  padding: 6px 12px;
   margin: 8px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   font-family: Arial, sans-serif;
   width: 300px;
-  height: 72px;
+  height: 60px;
 }
 
 .header {
@@ -19,7 +19,7 @@
 }
 
 .phaseTitle {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   color: #333;
 }
@@ -64,7 +64,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
   font-size: 13px;
 }
 
