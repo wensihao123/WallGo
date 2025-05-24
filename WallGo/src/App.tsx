@@ -5,7 +5,6 @@ import { EdgeHorizontal } from "./components/EdgeHorizontal";
 import { EdgeVertical } from "./components/EdgeVertical";
 import { Corner } from "./components/Corner";
 import { GameProvider } from "./context/GameContext";
-import { DebugPanel } from "./components/DebugPanel";
 import { Indicator } from "./components/Indicator";
 import { GameOverModal } from "./components/GameOverBoard";
 
