@@ -1,0 +1,100 @@
+.container {
+  background: #f2f5fa;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 8px;
+  margin: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  font-family: Arial, sans-serif;
+  width: 300px;
+  height: 72px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.phaseTitle {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.currentPlayer {
+  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.currentPlayerRed {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 2px solid #f44336;
+}
+
+.currentPlayerBlue {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 2px solid #2196f3;
+}
+
+.placementStats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.redCount {
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+.blueCount {
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.movementInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.movesRemaining {
+  padding: 3px 8px;
+  border-radius: 12px;
+  background-color: #fff3e0;
+  color: #ef6c00;
+  font-weight: bold;
+  border: 1px solid #ffcc02;
+}
+
+.selectedPiece {
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.selectedPieceActive {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+.selectedPieceInactive {
+  color: #666;
+}
+
+.hint {
+  font-size: 11px;
+  margin-top: 6px;
+  color: #666;
+  text-align: center;
+  font-style: italic;
+}

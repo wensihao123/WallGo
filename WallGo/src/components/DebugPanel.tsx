@@ -2,8 +2,7 @@ import React from 'react';
 import { useGameContext } from '../context/GameContext';
 
 export const DebugPanel: React.FC = () => {
-  const { playerWalls, completedCells } = useGameContext();
-    console.log('completedCells', completedCells);
+  const { playerWalls } = useGameContext();
 
   return (
     <div className="debug-panel">

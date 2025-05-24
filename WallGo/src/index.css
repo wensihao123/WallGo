@@ -47,7 +47,7 @@ button {
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #575fff;
+  border-color: #f8b0b0;
 }
 button:focus,
 button:focus-visible {
@@ -64,5 +64,20 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
   }
 }

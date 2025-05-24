@@ -7,6 +7,7 @@ import { Corner } from "./components/Corner";
 import { GameProvider } from "./context/GameContext";
 import { DebugPanel } from "./components/DebugPanel";
 import { Indicator } from "./components/Indicator";
+import { GameOverModal } from "./components/GameOverBoard";
 
 const BOARD_SIZE = 7;
 
@@ -58,8 +59,7 @@ export default function App() {
             ))
           )}
         </div>
-
-        <DebugPanel />
+        <GameOverModal />
       </div>
     </GameProvider>
   );

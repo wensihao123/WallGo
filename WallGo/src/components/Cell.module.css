@@ -1,0 +1,61 @@
+.cell {
+  position: absolute;
+  cursor: pointer;
+  background: #f0f0f0;
+}
+
+.cellPlacement {
+  cursor: pointer;
+}
+
+.cellMovementPiece {
+  cursor: pointer;
+}
+
+.cellMovementTarget {
+  cursor: pointer;
+}
+
+.cellDefault {
+  cursor: default;
+}
+
+.piece {
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pieceSelected {
+  border: 4px solid #ffffff;
+  box-shadow: 0 0 10px rgba(255,255,255,0.8);
+}
+
+.moveIndicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #d1b4f7;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+}
