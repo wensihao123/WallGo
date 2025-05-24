@@ -97,3 +97,32 @@
   text-align: center;
   font-style: italic;
 }
+
+.skipButton {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.skipMoveButton {
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.skipMoveButton:hover {
+  background: linear-gradient(135deg, #f57c00, #ef6c00);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.skipMoveButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

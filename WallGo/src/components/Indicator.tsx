@@ -9,7 +9,8 @@ export const Indicator: React.FC = () => {
     currentMovePlayer, 
     movesRemaining, 
     selectedPiece,
-    lastMovedPiece 
+    lastMovedPiece,
+    skipRemainingMoves  // 新增
   } = useGameContext();
 
   if (gamePhase === 'placement') {
@@ -71,6 +72,9 @@ export const Indicator: React.FC = () => {
       `已选择 #${selectedPiece.pieceIndex + 1}` : 
       '选择棋子';
     
+    // 新增：判断是否可以跳过移动
+    const canSkipMoves = movesRemaining === 1 && lastMovedPiece;
+    
     return (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -85,6 +89,16 @@ export const Indicator: React.FC = () => {
           <span className={styles.movesRemaining}>
             🎯 移动: {movesRemaining}/2
           </span>
+          {canSkipMoves && (
+          <div className={styles.movementInfo}>
+            <button 
+              onClick={skipRemainingMoves}
+              className={styles.movesRemaining}
+            >
+                结束移动阶段
+            </button>
+          </div>
+        )}
           <span className={`${styles.selectedPiece} ${selectedPiece ? styles.selectedPieceActive : styles.selectedPieceInactive}`}>
             {selectedPiece ? `✅ ${selectedPieceInfo}` : `👆 ${selectedPieceInfo}`}
           </span>

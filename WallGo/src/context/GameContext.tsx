@@ -45,8 +45,10 @@ interface GameContextType {
   redScore: number;
   blueScore: number;
   restartGame: () => void;
-    // Reset key to force component remount
+  // Reset key to force component remount
   resetKey: number;
+  // 新增：跳过剩余移动，直接进入墙壁放置阶段
+  skipRemainingMoves: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -67,9 +69,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     0: [],
     1: [],
   });
- const [gamePhase, setGamePhase] = useState<"placement" | "movement" | "wallPlacement" | "gameOver">(
-    "placement"
-  );
+  const [gamePhase, setGamePhase] = useState<
+    "placement" | "movement" | "wallPlacement" | "gameOver"
+  >("placement");
   const [movedPieceInTurn, setMovedPieceInTurn] = useState<{
     player: Player;
     pieceIndex: number;
@@ -87,144 +89,165 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     row: number;
     col: number;
   } | null>(null);
+   // 新增状态：追踪本回合是否已经移动过
+  const [hasMovedInTurn, setHasMovedInTurn] = useState(false);
 
-    // Game over state
+  // Game over state
   const [winner, setWinner] = useState<Player | null>(null);
   const [redScore, setRedScore] = useState(0);
   const [blueScore, setBlueScore] = useState(0);
 
   useEffect(() => {
-    const title = gamePhase === 'placement' ? '棋子放置阶段' : 
-                  gamePhase === 'movement' ? '移动阶段' : 
-                  gamePhase === 'wallPlacement' ? '墙壁放置阶段' : '游戏结束';
+    const title =
+      gamePhase === "placement"
+        ? "棋子放置阶段"
+        : gamePhase === "movement"
+        ? "移动阶段"
+        : gamePhase === "wallPlacement"
+        ? "墙壁放置阶段"
+        : "游戏结束";
     document.title = title;
   }, [gamePhase]);
 
-  const isCellReachable = useCallback((targetRow: number, targetCol: number, allWalls: EdgeCoord[]): boolean => {
-    // BFS to check if any piece can reach this cell
-    const isWall = (type: EdgeType, row: number, col: number) =>
-      allWalls.some((e) => e.type === type && e.row === row && e.col === col);
+  const isCellReachable = useCallback(
+    (targetRow: number, targetCol: number, allWalls: EdgeCoord[]): boolean => {
+      // BFS to check if any piece can reach this cell
+      const isWall = (type: EdgeType, row: number, col: number) =>
+        allWalls.some((e) => e.type === type && e.row === row && e.col === col);
 
-    // Check reachability from any existing piece
-    const allPieces = [...playerPieces[0], ...playerPieces[1]];
-    
-    for (const piece of allPieces) {
-      const visited = Array.from({ length: 7 }, () => Array(7).fill(false));
-      const queue: [number, number][] = [[piece.row, piece.col]];
-      visited[piece.row][piece.col] = true;
+      // Check reachability from any existing piece
+      const allPieces = [...playerPieces[0], ...playerPieces[1]];
 
-      while (queue.length > 0) {
-        const [row, col] = queue.shift()!;
-        
-        if (row === targetRow && col === targetCol) {
-          return true; // Found a path
-        }
+      for (const piece of allPieces) {
+        const visited = Array.from({ length: 7 }, () => Array(7).fill(false));
+        const queue: [number, number][] = [[piece.row, piece.col]];
+        visited[piece.row][piece.col] = true;
 
-        // Check all 4 directions
-        const directions: [number, number, EdgeType, number, number][] = [
-          [-1, 0, "h", row, col], // Up
-          [1, 0, "h", row + 1, col], // Down  
-          [0, -1, "v", row, col], // Left
-          [0, 1, "v", row, col + 1], // Right
-        ];
+        while (queue.length > 0) {
+          const [row, col] = queue.shift()!;
 
-        for (const [dr, dc, wallType, wallRow, wallCol] of directions) {
-          const newRow = row + dr;
-          const newCol = col + dc;
-          
-          if (
-            newRow >= 0 && newRow < 7 && 
-            newCol >= 0 && newCol < 7 && 
-            !visited[newRow][newCol] &&
-            !isWall(wallType, wallRow, wallCol)
-          ) {
-            visited[newRow][newCol] = true;
-            queue.push([newRow, newCol]);
+          if (row === targetRow && col === targetCol) {
+            return true; // Found a path
+          }
+
+          // Check all 4 directions
+          const directions: [number, number, EdgeType, number, number][] = [
+            [-1, 0, "h", row, col], // Up
+            [1, 0, "h", row + 1, col], // Down
+            [0, -1, "v", row, col], // Left
+            [0, 1, "v", row, col + 1], // Right
+          ];
+
+          for (const [dr, dc, wallType, wallRow, wallCol] of directions) {
+            const newRow = row + dr;
+            const newCol = col + dc;
+
+            if (
+              newRow >= 0 &&
+              newRow < 7 &&
+              newCol >= 0 &&
+              newCol < 7 &&
+              !visited[newRow][newCol] &&
+              !isWall(wallType, wallRow, wallCol)
+            ) {
+              visited[newRow][newCol] = true;
+              queue.push([newRow, newCol]);
+            }
           }
         }
       }
-    }
-    
-    return false; // No path found from any piece
-  }, [playerPieces]);
 
-   // Check if game is over and calculate scores
-  const checkGameOverWithReachability = useCallback((regionMap: number[][]) => {
-    const allWalls = playerWalls[0].concat(playerWalls[1]);
-    
-    // Count cells by color, excluding unreachable cells
-    let redCells = 0;
-    let blueCells = 0;
-    let neutralCells = 0;
-    let unreachableCells = 0;
+      return false; // No path found from any piece
+    },
+    [playerPieces]
+  );
 
-    // Helper function to get region color
-    const getRegionColor = (regionId: number) => {
-      if (regionId < 0) return 'neutral';
-      
-      let hasRedPiece = false;
-      let hasBluePiece = false;
-      
+  // Check if game is over and calculate scores
+  const checkGameOverWithReachability = useCallback(
+    (regionMap: number[][]) => {
+      const allWalls = playerWalls[0].concat(playerWalls[1]);
+
+      // Count cells by color, excluding unreachable cells
+      let redCells = 0;
+      let blueCells = 0;
+      let neutralCells = 0;
+      let unreachableCells = 0;
+
+      // Helper function to get region color
+      const getRegionColor = (regionId: number) => {
+        if (regionId < 0) return "neutral";
+
+        let hasRedPiece = false;
+        let hasBluePiece = false;
+
+        for (let r = 0; r < 7; r++) {
+          for (let c = 0; c < 7; c++) {
+            if (regionMap[r][c] === regionId) {
+              const redPiece = playerPieces[0].find(
+                (p) => p.row === r && p.col === c
+              );
+              const bluePiece = playerPieces[1].find(
+                (p) => p.row === r && p.col === c
+              );
+
+              if (redPiece) hasRedPiece = true;
+              if (bluePiece) hasBluePiece = true;
+            }
+          }
+        }
+
+        if (hasRedPiece && hasBluePiece) return "neutral";
+        if (hasRedPiece) return "red";
+        if (hasBluePiece) return "blue";
+        return "neutral";
+      };
+
+      // Count cells by region color, excluding unreachable ones
       for (let r = 0; r < 7; r++) {
         for (let c = 0; c < 7; c++) {
-          if (regionMap[r][c] === regionId) {
-            const redPiece = playerPieces[0].find(p => p.row === r && p.col === c);
-            const bluePiece = playerPieces[1].find(p => p.row === r && p.col === c);
-            
-            if (redPiece) hasRedPiece = true;
-            if (bluePiece) hasBluePiece = true;
+          // Check if this cell is reachable
+          if (!isCellReachable(r, c, allWalls)) {
+            unreachableCells++;
+            continue; // Skip unreachable cells
+          }
+
+          const regionId = regionMap[r][c];
+          const regionColor = getRegionColor(regionId);
+
+          if (regionColor === "red") {
+            redCells++;
+          } else if (regionColor === "blue") {
+            blueCells++;
+          } else {
+            neutralCells++;
           }
         }
       }
-      
-      if (hasRedPiece && hasBluePiece) return 'neutral';
-      if (hasRedPiece) return 'red';
-      if (hasBluePiece) return 'blue';
-      return 'neutral';
-    };
 
-    // Count cells by region color, excluding unreachable ones
-    for (let r = 0; r < 7; r++) {
-      for (let c = 0; c < 7; c++) {
-        // Check if this cell is reachable
-        if (!isCellReachable(r, c, allWalls)) {
-          unreachableCells++;
-          continue; // Skip unreachable cells
-        }
-        
-        const regionId = regionMap[r][c];
-        const regionColor = getRegionColor(regionId);
-        
-        if (regionColor === 'red') {
-          redCells++;
-        } else if (regionColor === 'blue') {
-          blueCells++;
+      setRedScore(redCells);
+      setBlueScore(blueCells);
+
+      console.log(
+        `游戏状态: 红${redCells} 蓝${blueCells} 中性${neutralCells} 不可达${unreachableCells}`
+      );
+
+      // Game is over when all reachable cells are colored (no neutral reachable cells)
+      if (neutralCells === 0) {
+        if (redCells > blueCells) {
+          setWinner(0);
+        } else if (blueCells > redCells) {
+          setWinner(1);
         } else {
-          neutralCells++;
+          setWinner(null); // Draw
         }
+        setGamePhase("gameOver");
+        return true;
       }
-    }
 
-    setRedScore(redCells);
-    setBlueScore(blueCells);
-
-    console.log(`游戏状态: 红${redCells} 蓝${blueCells} 中性${neutralCells} 不可达${unreachableCells}`);
-
-    // Game is over when all reachable cells are colored (no neutral reachable cells)
-    if (neutralCells === 0) {
-      if (redCells > blueCells) {
-        setWinner(0);
-      } else if (blueCells > redCells) {
-        setWinner(1);
-      } else {
-        setWinner(null); // Draw
-      }
-      setGamePhase('gameOver');
-      return true;
-    }
-
-    return false;
-  }, [playerPieces, playerWalls, isCellReachable]);
+      return false;
+    },
+    [playerPieces, playerWalls, isCellReachable]
+  );
 
   // Reset game to initial state
   const restartGame = useCallback(() => {
@@ -240,7 +263,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     setWinner(null);
     setRedScore(0);
     setBlueScore(0);
-    // Force remount of all components to reset their local state
+    setHasMovedInTurn(false);
     setResetKey(prev => prev + 1);
   }, []);
 
@@ -327,6 +350,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     [playerPieces]
   );
 
+    // 新增函数：跳过剩余移动，直接进入墙壁放置阶段
+  const skipRemainingMoves = useCallback(() => {
+    if (gamePhase === "movement" && hasMovedInTurn) {
+      setGamePhase("wallPlacement");
+      setSelectedPiece(null);
+      setMovesRemaining(0); // 设置为0表示不能再移动
+    }
+  }, [gamePhase, hasMovedInTurn]);
+
   const addWallAndUpdate = useCallback(
     (player: Player, edge: EdgeCoord): boolean => {
       // 只有在墙壁放置阶段才能添加墙壁
@@ -373,6 +405,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
           [player]: [...prev[player], edge],
         };
 
+        // ...existing DFS logic for region calculation...
         const allWalls = updated[0].concat(updated[1]);
         const isWall = (type: EdgeType, row: number, col: number) =>
           allWalls.some(
@@ -418,28 +451,36 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
 
         setCompletedCells(regionMap);
 
-        // 立即检查游戏是否结束（使用更新后的区域数据）
+        // 立即检查游戏是否结束
         setTimeout(() => {
           const gameEnded = checkGameOverWithReachability(regionMap);
           
           if (!gameEnded) {
             // 墙壁放置完成后，切换到下一位玩家的移动阶段
-            if (gamePhase === 'wallPlacement') {
-              setCurrentMovePlayer(currentMovePlayer === 0 ? 1 : 0);
-              setMovesRemaining(2);
-              setGamePhase('movement');
-              setLastMovedPiece(null);
-              setMovedPieceInTurn(null);
-            }
+            setCurrentMovePlayer(currentMovePlayer === 0 ? 1 : 0);
+            setMovesRemaining(2);
+            setGamePhase("movement");
+            setLastMovedPiece(null);
+            setMovedPieceInTurn(null);
+            setHasMovedInTurn(false); // 重置新回合的移动状态
           }
         }, 0);
 
         return updated;
       });
 
-      return true; // 成功放置墙壁
+      return true;
     },
-    [gamePhase, currentMovePlayer, lastMovedPiece, playerWalls, playerPieces, isOuterBorder, isEdgeAdjacentToLastMoved]
+    [
+      gamePhase,
+      currentMovePlayer,
+      lastMovedPiece,
+      playerWalls,
+      playerPieces,
+      isOuterBorder,
+      isEdgeAdjacentToLastMoved,
+      checkGameOverWithReachability,
+    ]
   );
 
   const addPiece = (player: Player, row: number, col: number) => {
@@ -463,51 +504,36 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  const selectPiece = useCallback(
+const selectPiece = useCallback(
     (player: Player, pieceIndex: number) => {
       if (gamePhase !== "movement" || player !== currentMovePlayer) return;
 
-      // If this is the first move (movesRemaining === 2), allow selecting any piece
+      // 如果还有2步移动，可以选择任意己方棋子
       if (movesRemaining === 2) {
         if (
           !selectedPiece ||
-          (selectedPiece.player === player &&
-            selectedPiece.pieceIndex === pieceIndex)
+          (selectedPiece.player === player && selectedPiece.pieceIndex === pieceIndex)
         ) {
           setSelectedPiece(selectedPiece ? null : { player, pieceIndex });
         } else if (selectedPiece.player === player) {
           setSelectedPiece({ player, pieceIndex });
         }
       }
-      // If this is the second move (movesRemaining === 1), only allow selecting the same piece that was moved
-      else if (movesRemaining === 1) {
-        // Only allow selecting the same piece, no switching allowed
+      // 如果只剩1步移动，且已经移动过一次，只能选择之前移动的棋子
+      else if (movesRemaining === 1 && movedPieceInTurn) {
         if (
-          selectedPiece &&
-          selectedPiece.player === player &&
-          selectedPiece.pieceIndex === pieceIndex
+          movedPieceInTurn.player === player &&
+          movedPieceInTurn.pieceIndex === pieceIndex
         ) {
-          // Allow deselecting and reselecting the same piece
-          setSelectedPiece(null);
-          setTimeout(() => setSelectedPiece({ player, pieceIndex }), 0);
+          setSelectedPiece(selectedPiece ? null : { player, pieceIndex });
         }
-        // If no piece is selected, auto-select the piece that was moved in the first step
-        else if (!selectedPiece) {
-          setSelectedPiece({ player, pieceIndex });
-        }
-        // Ignore clicks on other pieces
       }
     },
-    [gamePhase, currentMovePlayer, selectedPiece, movesRemaining]
+    [gamePhase, currentMovePlayer, selectedPiece, movesRemaining, movedPieceInTurn]
   );
 
   const movePiece = useCallback(
-    (
-      fromRow: number,
-      fromCol: number,
-      toRow: number,
-      toCol: number
-    ): boolean => {
+    (fromRow: number, fromCol: number, toRow: number, toCol: number): boolean => {
       if (gamePhase !== "movement" || !selectedPiece) return false;
 
       const { player, pieceIndex } = selectedPiece;
@@ -520,8 +546,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Verify the piece being moved is the selected one
       const piece = playerPieces[player][pieceIndex];
-      if (!piece || piece.row !== fromRow || piece.col !== fromCol)
-        return false;
+      if (!piece || piece.row !== fromRow || piece.col !== fromCol) return false;
 
       // If this is the second move, ensure it's the same piece that was moved first
       if (movesRemaining === 1 && movedPieceInTurn) {
@@ -544,20 +569,21 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       // Set last moved piece for wall placement reference
       setLastMovedPiece({ player, row: toRow, col: toCol });
 
-      // Track which piece was moved in this turn
+      // Track which piece was moved in this turn (only for first move)
       if (movesRemaining === 2) {
         setMovedPieceInTurn({ player, pieceIndex });
+        setHasMovedInTurn(true);
       }
 
       // Decrease moves remaining
       setMovesRemaining((prev) => prev - 1);
 
-      // If no moves remaining, enter wall placement phase
+      // 如果移动了2步，必须进入墙壁放置阶段
       if (movesRemaining === 1) {
         setGamePhase("wallPlacement");
         setSelectedPiece(null);
-        setMovedPieceInTurn(null); // Reset for next turn
       }
+      // 如果移动了1步，取消选择但保持在移动阶段，玩家可以选择继续移动或放置墙壁
 
       return true;
     },
@@ -572,6 +598,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       areCellsConnected,
     ]
   );
+  
 
   const endTurn = useCallback(() => {
     setCurrentMovePlayer((prev) => (prev === 0 ? 1 : 0));
@@ -601,6 +628,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
         blueScore,
         restartGame,
         resetKey,
+        skipRemainingMoves,
       }}
     >
       {children}
